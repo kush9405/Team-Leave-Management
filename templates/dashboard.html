@@ -1,0 +1,801 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - Leave Management</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            min-height: 100vh;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #333;
+        }
+        .header {
+            background: white;
+            padding: 20px 40px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .header h1 {
+            color: #667eea;
+            font-size: 24px;
+        }
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        .user-avatar {
+            width: 40px;
+            height: 40px;
+            background: #667eea;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+        }
+        .logout-btn {
+            background: #dc3545;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        .logout-btn:hover {
+            background: #c82333;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 40px auto;
+            padding: 0 20px;
+        }
+        .welcome-card {
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+            margin-bottom: 30px;
+        }
+        .welcome-card h2 {
+            color: #667eea;
+            margin-bottom: 10px;
+        }
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        .stat-card {
+            background: white;
+            padding: 25px;
+            border-radius: 12px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.08);
+        }
+        .stat-card h3 {
+            color: #666;
+            font-size: 14px;
+            margin-bottom: 10px;
+        }
+        .stat-card .value {
+            font-size: 36px;
+            font-weight: bold;
+            color: #667eea;
+        }
+        .quick-actions {
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+            margin-bottom: 30px;
+        }
+        .quick-actions h2 {
+            color: #667eea;
+            margin-bottom: 20px;
+        }
+        .action-buttons {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+        .action-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            text-decoration: none;
+            display: inline-block;
+        }
+        .action-btn:hover {
+            opacity: 0.9;
+            transform: translateY(-2px);
+        }
+        .not-authenticated {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+        }
+        .login-card {
+            background: white;
+            padding: 40px;
+            border-radius: 12px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+            text-align: center;
+        }
+        .login-card h1 {
+            color: #333;
+            margin-bottom: 20px;
+        }
+        .login-card p {
+            color: #666;
+            margin-bottom: 30px;
+        }
+        .login-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 15px 40px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            text-decoration: none;
+            display: inline-block;
+        }
+        .login-btn:hover {
+            opacity: 0.9;
+        }
+        .error-message {
+            background: #f8d7da;
+            color: #721c24;
+            padding: 15px;
+            border-radius: 6px;
+            margin-bottom: 20px;
+        }
+        .success-message {
+            background: #d4edda;
+            color: #155724;
+            padding: 15px;
+            border-radius: 6px;
+            margin-bottom: 20px;
+        }
+        .role-badge {
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            color: white;
+        }
+        .role-admin { background: #667eea; }
+        .role-manager { background: #fd7e14; }
+        .role-employee { background: #28a745; }
+        
+        /* Modal Styles */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+        .modal-overlay.active {
+            display: flex;
+        }
+        .modal {
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            max-width: 500px;
+            width: 90%;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+        .modal h2 {
+            color: #667eea;
+            margin-bottom: 20px;
+        }
+        .modal-close {
+            float: right;
+            background: none;
+            border: none;
+            font-size: 24px;
+            cursor: pointer;
+            color: #666;
+        }
+        .modal-close:hover {
+            color: #333;
+        }
+        .form-group {
+            margin-bottom: 20px;
+        }
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: #333;
+            font-weight: 500;
+        }
+        .form-group input,
+        .form-group select {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: border-color 0.3s;
+        }
+        .form-group input:focus,
+        .form-group select:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        .modal-btn {
+            width: 100%;
+            padding: 14px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .modal-btn-submit {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        .modal-btn-submit:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+        .modal-btn-cancel {
+            background: #e0e0e0;
+            color: #333;
+            margin-top: 10px;
+        }
+        .modal-btn-cancel:hover {
+            background: #d0d0d0;
+        }
+        .leave-history {
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+        }
+        .leave-history h2 {
+            color: #667eea;
+            margin-bottom: 20px;
+        }
+        .leave-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        .leave-table th,
+        .leave-table td {
+            padding: 12px 15px;
+            text-align: left;
+            border-bottom: 1px solid #e0e0e0;
+        }
+        .leave-table th {
+            background: #f5f5f5;
+            font-weight: 600;
+            color: #333;
+        }
+        .leave-table tr:hover {
+            background: #f9f9f9;
+        }
+        .status-badge {
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+        .status-pending {
+            background: #fff3cd;
+            color: #856404;
+        }
+        .status-approved {
+            background: #d4edda;
+            color: #155724;
+        }
+        .status-rejected {
+            background: #f8d7da;
+            color: #721c24;
+        }
+        .no-leaves {
+            text-align: center;
+            padding: 40px;
+            color: #666;
+        }
+        .loading {
+            text-align: center;
+            padding: 20px;
+            color: #666;
+        }
+    </style>
+</head>
+<body>
+    <div id="app">
+        <!-- Content will be rendered here -->
+    </div>
+
+    <!-- Request Leave Modal -->
+    <div id="leaveModal" class="modal-overlay">
+        <div class="modal">
+            <button class="modal-close" onclick="closeLeaveModal()">&times;</button>
+            <h2>📝 Request Leave</h2>
+            <div id="leaveFormMessage"></div>
+            <form id="leaveForm" onsubmit="submitLeaveRequest(event)">
+                <div class="form-group">
+                    <label for="leaveType">Leave Type</label>
+                    <select id="leaveType" required>
+                        <option value="">Select leave type</option>
+                        <option value="SICK">Sick Leave</option>
+                        <option value="CASUAL">Casual Leave</option>
+                        <option value="EARNED">Earned Leave</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="startDate">Start Date</label>
+                    <input type="date" id="startDate" required>
+                </div>
+                <div class="form-group">
+                    <label for="endDate">End Date</label>
+                    <input type="date" id="endDate" required>
+                </div>
+                <button type="submit" class="modal-btn modal-btn-submit">Submit Request</button>
+                <button type="button" class="modal-btn modal-btn-cancel" onclick="closeLeaveModal()">Cancel</button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        const API_URL = 'http://localhost:8000/api';
+        const LEAVES_API_URL = 'http://localhost:8000/leaves/leaves';
+        
+        (function() {
+            const app = document.getElementById('app');
+            
+            // Check authentication
+            const accessToken = localStorage.getItem('access_token');
+            const refreshToken = localStorage.getItem('refresh_token');
+            let user = JSON.parse(localStorage.getItem('user') || 'null');
+            
+            if (!accessToken || !refreshToken) {
+                // Not authenticated
+                app.innerHTML = `
+                    <div class="not-authenticated">
+                        <div class="login-card">
+                            <h1>Welcome to Leave Management</h1>
+                            <p>Please log in to access your dashboard.</p>
+                            <a href="/login" class="login-btn">Login</a>
+                        </div>
+                    </div>
+                `;
+                return;
+            }
+            
+            // Render dashboard based on user role
+            function renderDashboard(userData) {
+                // Get user initials for avatar
+                const initials = userData && userData.username
+                    ? userData.username.substring(0, 2).toUpperCase()
+                    : 'U';
+                
+                const userName = userData && userData.username ? userData.username : 'User';
+                const userEmail = userData && userData.email ? userData.email : '';
+                const userRole = userData && userData.role ? userData.role : 'EMPLOYEE';
+                const isAdmin = userRole === 'ADMIN';
+                const isManager = userRole === 'MANAGER';
+                const isAdminOrManager = isAdmin || isManager;
+                
+                // Role badge class
+                const roleBadgeClass = isAdmin ? 'role-admin' : (isManager ? 'role-manager' : 'role-employee');
+                const roleLabel = userRole;
+                
+                // Generate action buttons based on role
+                let actionButtons = '';
+                
+                if (isAdminOrManager) {
+                    // Admin/Manager actions
+                    actionButtons = `
+                        <button class="action-btn" onclick="manageEmployees()">👥 Manage Employees</button>
+                        <button class="action-btn" onclick="approveLeaves()">✅ Approve Leaves</button>
+                        <button class="action-btn" onclick="viewAllRequests()">📋 View All Requests</button>
+                        <button class="action-btn" onclick="viewReports()">📊 View Reports</button>
+                        <button class="action-btn" onclick="manageUsers()">⚙️ Manage Users</button>
+                    `;
+                } else {
+                    // Employee actions
+                    actionButtons = `
+                        <button class="action-btn" onclick="openLeaveModal()">📝 Request Leave</button>
+                        <button class="action-btn" onclick="viewHistory()">📅 View My History</button>
+                        <button class="action-btn" onclick="viewBalance()">💰 Check Balance</button>
+                        <button class="action-btn" onclick="viewProfile()">👤 View Profile</button>
+                    `;
+                }
+                
+                // Stats based on role
+                let statsHTML = '';
+                if (isAdminOrManager) {
+                    statsHTML = `
+                        <div class="stat-card">
+                            <h3>Total Employees</h3>
+                            <div class="value">24</div>
+                            <p style="color: #666; font-size: 14px;">registered users</p>
+                        </div>
+                        <div class="stat-card">
+                            <h3>Pending Requests</h3>
+                            <div class="value">5</div>
+                            <p style="color: #666; font-size: 14px;">awaiting approval</p>
+                        </div>
+                        <div class="stat-card">
+                            <h3>Approved Today</h3>
+                            <div class="value">3</div>
+                            <p style="color: #666; font-size: 14px;">requests approved</p>
+                        </div>
+                        <div class="stat-card">
+                            <h3>On Leave Today</h3>
+                            <div class="value">2</div>
+                            <p style="color: #666; font-size: 14px;">employees away</p>
+                        </div>
+                    `;
+                } else {
+                    statsHTML = `
+                        <div class="stat-card">
+                            <h3>Available Leave</h3>
+                            <div class="value">12</div>
+                            <p style="color: #666; font-size: 14px;">days this year</p>
+                        </div>
+                        <div class="stat-card">
+                            <h3>Pending Requests</h3>
+                            <div class="value" id="pendingCount">0</div>
+                            <p style="color: #666; font-size: 14px;">awaiting approval</p>
+                        </div>
+                        <div class="stat-card">
+                            <h3>Approved</h3>
+                            <div class="value">5</div>
+                            <p style="color: #666; font-size: 14px;">days approved</p>
+                        </div>
+                        <div class="stat-card">
+                            <h3>Remaining</h3>
+                            <div class="value">7</div>
+                            <p style="color: #666; font-size: 14px;">days available</p>
+                        </div>
+                    `;
+                }
+                
+                // Render dashboard
+                app.innerHTML = `
+                    <div class="header">
+                        <h1>📋 Leave Management</h1>
+                        <div class="user-info">
+                            <div class="user-avatar">${initials}</div>
+                            <span>${userName} <span class="role-badge ${roleBadgeClass}">${roleLabel}</span></span>
+                            <button class="logout-btn" onclick="logout()">Logout</button>
+                        </div>
+                    </div>
+                    
+                    <div class="container">
+                        <div class="welcome-card">
+                            <h2>Welcome back, ${userName}! 👋</h2>
+                            ${userEmail ? `<p>${userEmail}</p>` : ''}
+                            <p>${isAdminOrManager ? 'Admin Dashboard - Manage employee leave requests and settings.' : 'Employee Dashboard - Manage your leave requests and balance.'}</p>
+                        </div>
+                        
+                        <div class="stats-grid">
+                            ${statsHTML}
+                        </div>
+                        
+                        <div class="quick-actions">
+                            <h2>${isAdminOrManager ? 'Admin Actions' : 'Quick Actions'}</h2>
+                            <div class="action-buttons">
+                                ${actionButtons}
+                            </div>
+                        </div>
+                        
+                        ${!isAdminOrManager ? `
+                        <div class="leave-history">
+                            <h2>📅 My Leave History</h2>
+                            <div id="leaveHistoryContent">
+                                <div class="loading">Loading leave history...</div>
+                            </div>
+                        </div>
+                        ` : ''}
+                    </div>
+                `;
+                
+                // Load leave history for employees
+                if (!isAdminOrManager) {
+                    loadLeaveHistory();
+                }
+            }
+            
+            // If user data exists, render immediately
+            if (user) {
+                renderDashboard(user);
+            } else {
+                // Fetch user data from API
+                const tokenType = localStorage.getItem('token_type') || 'Bearer';
+                fetch(`${API_URL}/auth/me/`, {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': `${tokenType} ${accessToken}`,
+                        'Content-Type': 'application/json'
+                    }
+                })
+                .then(response => {
+                    if (response.ok) {
+                        return response.json();
+                    } else {
+                        throw new Error('Failed to fetch user details');
+                    }
+                })
+                .then(data => {
+                    // Store and render user data
+                    localStorage.setItem('user', JSON.stringify(data.user));
+                    renderDashboard(data.user);
+                })
+                .catch(error => {
+                    console.warn('Could not fetch user details:', error);
+                    // Render with default user
+                    renderDashboard(null);
+                });
+            }
+            
+            // Logout function
+            window.logout = function() {
+                localStorage.removeItem('access_token');
+                localStorage.removeItem('refresh_token');
+                localStorage.removeItem('token_type');
+                localStorage.removeItem('user');
+                localStorage.removeItem('auth_time');
+                window.location.href = '/login';
+            };
+            
+            // Leave Modal Functions
+            window.openLeaveModal = function() {
+                const modal = document.getElementById('leaveModal');
+                const form = document.getElementById('leaveForm');
+                form.reset();
+                document.getElementById('leaveFormMessage').innerHTML = '';
+                
+                // Set min date to today
+                const today = new Date().toISOString().split('T')[0];
+                document.getElementById('startDate').min = today;
+                document.getElementById('endDate').min = today;
+                
+                modal.classList.add('active');
+            };
+            
+            window.closeLeaveModal = function() {
+                document.getElementById('leaveModal').classList.remove('active');
+            };
+            
+            // Close modal when clicking outside
+            document.getElementById('leaveModal').addEventListener('click', function(e) {
+                if (e.target === this) {
+                    closeLeaveModal();
+                }
+            });
+            
+            // Submit leave request
+            window.submitLeaveRequest = function(e) {
+                e.preventDefault();
+                
+                const leaveType = document.getElementById('leaveType').value;
+                const startDate = document.getElementById('startDate').value;
+                const endDate = document.getElementById('endDate').value;
+                
+                // Validation
+                if (new Date(startDate) > new Date(endDate)) {
+                    showLeaveFormError('End date must be after start date');
+                    return;
+                }
+                
+                // Get current user info for Employee_Name
+                const user = JSON.parse(localStorage.getItem('user') || '{}');
+                const employeeName = user.username || user.email?.split('@')[0] || 'Unknown';
+                
+                const tokenType = localStorage.getItem('token_type') || 'Bearer';
+                const accessToken = localStorage.getItem('access_token');
+                
+                fetch(`${LEAVES_API_URL}/`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `${tokenType} ${accessToken}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        Employee_Name: employeeName,
+                        Leave_Type: leaveType,
+                        Start_Date: startDate,
+                        End_Date: endDate
+                    })
+                })
+                .then(response => {
+                    if (response.ok) {
+                        return response.json();
+                    } else {
+                        return response.json().then(data => {
+                            throw new Error(data.detail || JSON.stringify(data));
+                        });
+                    }
+                })
+                .then(data => {
+                    closeLeaveModal();
+                    showLeaveHistory();
+                    alert('✅ Leave request submitted successfully!');
+                })
+                .catch(error => {
+                    console.error('Leave request error:', error);
+                    showLeaveFormError('Error: ' + error.message);
+                });
+            };
+            
+            function showLeaveFormError(message) {
+                document.getElementById('leaveFormMessage').innerHTML = `
+                    <div class="error-message">${message}</div>
+                `;
+            }
+            
+            // Load leave history
+            function loadLeaveHistory() {
+                const tokenType = localStorage.getItem('token_type') || 'Bearer';
+                const accessToken = localStorage.getItem('access_token');
+                
+                fetch(`${LEAVES_API_URL}/`, {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': `${tokenType} ${accessToken}`,
+                        'Content-Type': 'application/json'
+                    }
+                })
+                .then(response => {
+                    if (response.ok) {
+                        return response.json();
+                    } else {
+                        throw new Error('Failed to load leave history');
+                    }
+                })
+                .then(data => {
+                    showLeaveHistory(data);
+                })
+                .catch(error => {
+                    console.error('Leave history error:', error);
+                    document.getElementById('leaveHistoryContent').innerHTML = `
+                        <div class="no-leaves">Unable to load leave history</div>
+                    `;
+                });
+            }
+            
+            function showLeaveHistory(data) {
+                const container = document.getElementById('leaveHistoryContent');
+                if (!data) {
+                    // Reload if no data provided
+                    loadLeaveHistory();
+                    return;
+                }
+                
+                // Handle both paginated and non-paginated responses
+                const results = data.results || (Array.isArray(data) ? data : []);
+                let pendingCount = 0;
+                
+                if (results.length === 0) {
+                    container.innerHTML = `
+                        <div class="no-leaves">No leave requests yet. Click "Request Leave" to submit your first request.</div>
+                    `;
+                    return;
+                }
+                
+                let html = `
+                    <table class="leave-table">
+                        <thead>
+                            <tr>
+                                <th>Leave Type</th>
+                                <th>Start Date</th>
+                                <th>End Date</th>
+                                <th>Applied On</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                `;
+                
+                results.forEach(leave => {
+                    if (leave.Status === 'PENDING') pendingCount++;
+                    
+                    const statusClass = 'status-' + leave.Status.toLowerCase();
+                    const startDate = new Date(leave.Start_Date).toLocaleDateString();
+                    const endDate = new Date(leave.End_Date).toLocaleDateString();
+                    const appliedOn = new Date(leave.Applied_On).toLocaleDateString();
+                    
+                    html += `
+                        <tr>
+                            <td>${getLeaveTypeLabel(leave.Leave_Type)}</td>
+                            <td>${startDate}</td>
+                            <td>${endDate}</td>
+                            <td>${appliedOn}</td>
+                            <td><span class="status-badge ${statusClass}">${leave.Status}</span></td>
+                        </tr>
+                    `;
+                });
+                
+                html += '</tbody></table>';
+                container.innerHTML = html;
+                
+                // Update pending count
+                const pendingEl = document.getElementById('pendingCount');
+                if (pendingEl) pendingEl.textContent = pendingCount;
+            }
+            
+            function getLeaveTypeLabel(type) {
+                const types = {
+                    'SICK': 'Sick Leave',
+                    'CASUAL': 'Casual Leave',
+                    'EARNED': 'Earned Leave'
+                };
+                return types[type] || type;
+            }
+            
+            // Admin/Manager functions
+            window.manageEmployees = function() {
+                alert('Manage Employees feature coming soon!');
+            };
+            
+            window.approveLeaves = function() {
+                alert('Approve Leaves feature coming soon!');
+            };
+            
+            window.viewAllRequests = function() {
+                alert('View All Requests feature coming soon!');
+            };
+            
+            window.viewReports = function() {
+                alert('View Reports feature coming soon!');
+            };
+            
+            window.manageUsers = function() {
+                alert('Manage Users feature coming soon!');
+            };
+            
+            // Employee functions
+            window.requestLeave = function() {
+                openLeaveModal();
+            };
+            
+            window.viewHistory = function() {
+                loadLeaveHistory();
+            };
+            
+            window.viewBalance = function() {
+                alert('Balance check feature coming soon!');
+            };
+            
+            window.viewProfile = function() {
+                alert('Profile view feature coming soon!');
+            };
+            
+            console.log('Dashboard loaded successfully');
+            console.log('User:', user);
+        })();
+    </script>
+</body>
+</html>

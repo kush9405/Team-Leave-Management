@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - Leave Management System</title>
+    <!-- Google Sign-In Script - loaded with onload callback to ensure it's ready -->
+    <script src="https://accounts.google.com/gsi/client" async defer onload="initGoogleSignIn()"></script>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        .login-container {
+            background: white;
+            padding: 40px;
+            border-radius: 15px;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.2);
+            width: 100%;
+            max-width: 400px;
+        }
+        .logo {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .logo h1 {
+            color: #333;
+            font-size: 24px;
+            margin-bottom: 5px;
+        }
+        .logo p {
+            color: #666;
+            font-size: 14px;
+        }
+        .form-group {
+            margin-bottom: 20px;
+        }
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: #333;
+            font-weight: 500;
+        }
+        .form-group input {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: border-color 0.3s;
+        }
+        .form-group input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        .btn {
+            width: 100%;
+            padding: 14px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            margin-bottom: 10px;
+        }
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+        .btn-google {
+            background: #DB4437;
+            color: white;
+        }
+        .btn-email {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        .divider {
+            display: flex;
+            align-items: center;
+            margin: 20px 0;
+        }
+        .divider::before, .divider::after {
+            content: '';
+            flex: 1;
+            height: 1px;
+            background: #e0e0e0;
+        }
+        .divider span {
+            padding: 0 15px;
+            color: #666;
+            font-size: 14px;
+        }
+        .result {
+            margin-top: 20px;
+            padding: 15px;
+            background: #f5f5f5;
+            border-radius: 8px;
+            display: none;
+        }
+        .result.show { display: block; }
+        .result h3 { color: #4CAF50; margin-bottom: 10px; }
+        .result p { margin-bottom: 5px; color: #333; }
+        .result code {
+            display: block;
+            background: #333;
+            color: #0f0;
+            padding: 10px;
+            border-radius: 5px;
+            font-size: 12px;
+            word-break: break-all;
+            margin-top: 10px;
+        }
+        .error {
+            background: #fee;
+            color: #c00;
+            padding: 10px;
+            border-radius: 5px;
+            margin-bottom: 15px;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="login-container">
+        <div class="logo">
+            <h1>🏢 Leave Management</h1>
+            <p>Sign in to manage your leaves</p>
+        </div>
+
+        <div id="error" class="error"></div>
+
+        <!-- Google Sign-In -->
+        <div id="google-btn" style="display: flex; justify-content: center; margin-bottom: 20px;"></div>
+        
+        <!-- Fallback Google OAuth Button (when Client ID not configured) -->
+        <button type="button" class="btn btn-google" id="google-oauth-btn" onclick="redirectToGoogleOAuth()">
+            🔗 Continue with Google OAuth
+        </button>
+        
+        <div id="google-setup-note" style="background: #fff3cd; padding: 10px; border-radius: 5px; margin-bottom: 15px; font-size: 12px; color: #856404; display: none;">
+            <strong>Note:</strong> Google Sign-In button requires Google Client ID setup. 
+            Using fallback OAuth flow. See <a href="GOOGLE_OAUTH_GUIDE.md">setup guide</a>.
+        </div>
+
+        <div class="divider"><span>or</span></div>
+
+        <!-- Email Login Form -->
+        <form id="emailForm">
+            <div class="form-group">
+                <label for="email">Email Address</label>
+                <input type="email" id="email" placeholder="Enter your email" required>
+            </div>
+            <div class="form-group">
+                <label for="password">Password</label>
+                <input type="password" id="password" placeholder="Enter your password" required>
+            </div>
+            <button type="submit" class="btn btn-email">Sign In with Email</button>
+        </form>
+
+        <!-- Result Display -->
+        <div id="result" class="result">
+            <h3>✅ Login Successful!</h3>
+            <p><strong>Email:</strong> <span id="userEmail"></span></p>
+            <p><strong>Role:</strong> <span id="userRole"></span></p>
+            <p><strong>Username:</strong> <span id="userName"></span></p>
+            <p><strong>Access Token:</strong></p>
+            <code id="tokenDisplay"></code>
+        </div>
+    </div>
+
+    <script>
+        const API_URL = 'http://localhost:8000/api';
+        
+        // Google Client ID
+        const GOOGLE_CLIENT_ID = '192469492371-f8jj0sicf3k8gscu7pki17n22ivb461r.apps.googleusercontent.com';
+
+        // Initialize Google Sign-In when script is loaded
+        function initGoogleSignIn() {
+            if (typeof google !== 'undefined' && google.accounts) {
+                google.accounts.id.initialize({
+                    client_id: GOOGLE_CLIENT_ID,
+                    callback: handleGoogleResponse,
+                    auto_select: false,
+                    cancel_on_tap_outside: true
+                });
+                
+                // Check for OAuth callback in URL
+                const urlParams = new URLSearchParams(window.location.search);
+                if (urlParams.has('access_token')) {
+                    // OAuth callback - show success and store tokens
+                    const accessToken = urlParams.get('access_token');
+                    const refreshToken = urlParams.get('refresh_token');
+                    const error = urlParams.get('error');
+                    const tokenType = urlParams.get('token_type') || 'Bearer';
+                    
+                    if (error) {
+                        showError('OAuth Error: ' + decodeURIComponent(error));
+                    } else if (accessToken && refreshToken) {
+                        // Store tokens
+                        localStorage.setItem('access_token', accessToken);
+                        localStorage.setItem('refresh_token', refreshToken);
+                        localStorage.setItem('token_type', tokenType);
+                        localStorage.setItem('auth_time', Date.now().toString());
+                        
+                        // Show success
+                        document.getElementById('userEmail').textContent = 'OAuth User';
+                        document.getElementById('userRole').textContent = 'Authenticated via Google';
+                        document.getElementById('userName').textContent = 'Google User';
+                        document.getElementById('tokenDisplay').textContent = accessToken.substring(0, 50) + '...';
+                        
+                        document.getElementById('result').classList.add('show');
+                        document.getElementById('emailForm').style.display = 'none';
+                        
+                        // Clean up URL and redirect to dashboard
+                        window.history.replaceState({}, document.title, '/');
+                        
+                        // Redirect to dashboard after short delay
+                        setTimeout(() => {
+                            window.location.href = '/dashboard/';
+                        }, 1500);
+                    }
+                } else if (urlParams.has('error')) {
+                    showError('OAuth Error: ' + decodeURIComponent(urlParams.get('error')));
+                } else {
+                    // Normal login page - render Google button
+                    google.accounts.id.renderButton(
+                        document.getElementById('google-btn'),
+                        {
+                            theme: 'outline',
+                            size: 'large',
+                            width: 340,
+                            text: 'signin_with',
+                            shape: 'rectangular',
+                            logo_alignment: 'left'
+                        }
+                    );
+                    // Hide fallback button since we have Google Client ID configured
+                    document.getElementById('google-oauth-btn').style.display = 'none';
+                }
+            }
+        }
+
+        // Handle Google Sign-In response
+        function handleGoogleResponse(response) {
+            showLoading();
+            
+            fetch(`${API_URL}/auth/google/`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ id_token: response.credential })
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.error) {
+                    showError(data.error);
+                } else {
+                    showResult(data);
+                }
+            })
+            .catch(err => {
+                showError('Network error: ' + err.message);
+            });
+        }
+
+        // Redirect to Google OAuth URL (fallback when Client ID not configured)
+        function redirectToGoogleOAuth() {
+            fetch(`${API_URL}/auth/google_auth_url/`)
+            .then(res => res.json())
+            .then(data => {
+                if (data.auth_url) {
+                    // Store a callback URL to return to after OAuth
+                    localStorage.setItem('oauth_callback', window.location.href);
+                    window.location.href = data.auth_url;
+                } else {
+                    showError('Failed to get Google OAuth URL');
+                }
+            })
+            .catch(err => {
+                showError('Network error: ' + err.message);
+            });
+        }
+
+        // Handle email form submission
+        document.getElementById('emailForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            showLoading();
+
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+
+            fetch(`${API_URL}/auth/login/`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email, password })
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.error) {
+                    showError(data.error);
+                } else {
+                    showResult(data);
+                }
+            })
+            .catch(err => {
+                showError('Network error: ' + err.message);
+            });
+        });
+
+        // Show result
+        function showResult(data) {
+            document.getElementById('error').style.display = 'none';
+            
+            document.getElementById('userEmail').textContent = data.user.email;
+            document.getElementById('userRole').textContent = data.user.role;
+            document.getElementById('userName').textContent = data.user.username;
+            document.getElementById('tokenDisplay').textContent = data.tokens.access_token;
+            
+            document.getElementById('result').classList.add('show');
+            document.getElementById('emailForm').style.display = 'none';
+            
+            // Store tokens and user data
+            localStorage.setItem('access_token', data.tokens.access_token);
+            localStorage.setItem('refresh_token', data.tokens.refresh_token);
+            localStorage.setItem('token_type', data.tokens.token_type);
+            localStorage.setItem('user', JSON.stringify(data.user));
+            localStorage.setItem('auth_time', Date.now().toString());
+            
+            // Redirect to dashboard after short delay
+            setTimeout(() => {
+                window.location.href = '/dashboard/';
+            }, 1500);
+        }
+
+        // Show error
+        function showError(message) {
+            const errorDiv = document.getElementById('error');
+            errorDiv.textContent = message;
+            errorDiv.style.display = 'block';
+        }
+
+        // Show loading state
+        function showLoading() {
+            document.getElementById('error').style.display = 'none';
+        }
+    </script>
+</body>
+</html>
+

@@ -1,0 +1,8 @@
+/.venv
+.env
+*.md
+__pycache__/
+*.pyc
+pyrightconfig.json
+mypy.ini
+setup_vscode.sh
