@@ -23,7 +23,7 @@ class CustomUserAuthBackend(ModelBackend):
         try:
             # Try to find user by email or username
             user = CustomUser.objects.get(
-                Q(email__iexact=username) | 
+                Q(email__iexact=username) |
                 Q(username__iexact=username)
             )
         except CustomUser.DoesNotExist:

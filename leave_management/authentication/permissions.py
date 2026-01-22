@@ -22,8 +22,8 @@ class IsManager(permissions.BasePermission):
         return (
             request.user and
             request.user.is_authenticated and
-            (request.user.role == Role.MANAGER or 
-             request.user.role == Role.ADMIN or 
+            (request.user.role == Role.MANAGER or
+             request.user.role == Role.ADMIN or
              request.user.is_superuser)
         )
 
