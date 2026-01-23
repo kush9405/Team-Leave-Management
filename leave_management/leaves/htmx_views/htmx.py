@@ -4,6 +4,8 @@ HTMX Views for Leave Management
 This module contains view functions for HTMX partial rendering.
 These views return HTML fragments for dynamic updates without full page reloads.
 """
+import json
+from django.http import QueryDict
 
 from django.http import HttpResponse
 from django.template.loader import render_to_string
@@ -219,8 +221,6 @@ def update_leave(request, leave_id):
     Returns:
         HttpResponse: Updated leave detail or error message
     """
-    import json
-    from django.http import QueryDict
     
     user = get_user_from_request(request)
     
@@ -258,7 +258,6 @@ def update_leave(request, leave_id):
         end_date = request.POST.get('End_Date')
 
     if not leave_type or not start_date or not end_date:
-        print(f"Error updating leave {leave.id}: leave_type={leave_type}, start_date={start_date}, end_date={end_date}")
         return HttpResponse('<p class="text-red-500">All fields are required</p>')
     
     # Update the leave
