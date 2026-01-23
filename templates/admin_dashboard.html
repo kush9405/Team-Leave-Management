@@ -67,6 +67,21 @@
 
     <!-- Main Content -->
     <main class="max-w-7xl mx-auto px-4 py-8">
+        <!-- Tabs -->
+        <div class="flex gap-2 mb-6">
+            <button onclick="switchTab('leaves')" id="tab-leaves" class="btn btn-primary">
+                <i class="fas fa-clipboard-list mr-2"></i>Leave Requests
+            </button>
+            <button onclick="switchTab('users')" id="tab-users" class="btn btn-ghost">
+                <i class="fas fa-users mr-2"></i>Manage Users
+            </button>
+            <button onclick="switchTab('stats')" id="tab-stats" class="btn btn-ghost">
+                <i class="fas fa-chart-bar mr-2"></i>Statistics
+            </button>
+        </div>
+
+        <!-- Leave Requests Section -->
+        <div id="section-leaves">
         <!-- Stats Cards -->
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
             <div class="bg-white rounded-xl border p-5 fade-in border-l-4 border-blue-500">
@@ -123,7 +138,7 @@
                     <div class="relative">
                         <i class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground"></i>
                         <input type="text" name="search" placeholder="Search employee..." class="input-field pl-9"
-                               hx-get="/htmx/leaves/" hx-trigger="keyup changed delay:500ms" hx-target="#leavesTable" hx-swap="innerHTML" hx-indicator="#loadingIndicator">
+                            hx-get="/htmx/leaves/" hx-trigger="keyup changed delay:500ms" hx-target="#leavesTable" hx-swap="innerHTML" hx-indicator="#loadingIndicator">
                     </div>
                 </div>
                 <div class="min-w-[140px]">
@@ -166,6 +181,43 @@
                 <div class="p-8 text-center">
                     <i class="fas fa-spinner fa-spin text-2xl text-primary"></i>
                     <p class="mt-2 text-muted-foreground">Loading leave requests...</p>
+                </div>
+            </div>
+        </div>
+        </div>
+
+        <!-- Users Section (Hidden by default) -->
+        <div id="section-users" class="hidden">
+            <div class="bg-white rounded-xl border overflow-hidden">
+                <div class="p-4 border-b flex items-center justify-between">
+                    <h3 class="font-semibold text-gray-900"><i class="fas fa-users mr-2 text-primary"></i>Manage Users</h3>
+                    <button onclick="showAddUserModal()" class="btn btn-primary btn-sm">
+                        <i class="fas fa-plus mr-1"></i>Add User
+                    </button>
+                </div>
+                <div id="usersTable" class="overflow-x-auto">
+                    <div class="p-8 text-center">
+                        <i class="fas fa-spinner fa-spin text-2xl text-primary"></i>
+                        <p class="mt-2 text-muted-foreground">Loading users...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Statistics Section (Hidden by default) -->
+        <div id="section-stats" class="hidden">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div class="bg-white rounded-xl border p-6">
+                    <h3 class="font-semibold text-gray-900 mb-4"><i class="fas fa-chart-pie mr-2 text-primary"></i>Leave Distribution</h3>
+                    <div id="leaveDistributionChart" class="h-64 flex items-center justify-center bg-gray-50 rounded-lg">
+                        <p class="text-muted-foreground">Chart placeholder</p>
+                    </div>
+                </div>
+                <div class="bg-white rounded-xl border p-6">
+                    <h3 class="font-semibold text-gray-900 mb-4"><i class="fas fa-chart-line mr-2 text-primary"></i>Monthly Trends</h3>
+                    <div id="monthlyTrendsChart" class="h-64 flex items-center justify-center bg-gray-50 rounded-lg">
+                        <p class="text-muted-foreground">Chart placeholder</p>
+                    </div>
                 </div>
             </div>
         </div>
@@ -226,7 +278,12 @@
                 headers: { 'Authorization': `${localStorage.getItem('token_type') || 'Bearer'} ${accessToken}`, 'Content-Type': 'application/json' },
                 body: JSON.stringify({ Status: 'APPROVED' })
             }).then(res => {
-                if (res.ok) { showToast('Leave approved!'); document.getElementById('leavesTable').dispatchEvent(new Event('load')); updateStats(); closeModal(); }
+                if (res.ok) {
+                    showToast('Leave approved!');
+                    closeModal();
+                    // Manually refresh the table by re-fetching
+                    refreshLeavesTable();
+                }
                 else throw new Error('Failed');
             }).catch(() => showToast('Error', 'error'));
         };
@@ -237,26 +294,61 @@
                 headers: { 'Authorization': `${localStorage.getItem('token_type') || 'Bearer'} ${accessToken}`, 'Content-Type': 'application/json' },
                 body: JSON.stringify({ Status: 'REJECTED' })
             }).then(res => {
-                if (res.ok) { showToast('Leave rejected!'); document.getElementById('leavesTable').dispatchEvent(new Event('load')); updateStats(); closeModal(); }
+                if (res.ok) {
+                    showToast('Leave rejected!');
+                    closeModal();
+                    // Manually refresh the table by re-fetching
+                    refreshLeavesTable();
+                }
                 else throw new Error('Failed');
             }).catch(() => showToast('Error', 'error'));
         };
 
+        function refreshLeavesTable() {
+            const tokenType = localStorage.getItem('token_type') || 'Bearer';
+            const currentStatus = document.getElementById('statusFilter') ? document.getElementById('statusFilter').value : '';
+            const currentSearch = document.getElementById('searchInput') ? document.getElementById('searchInput').value : '';
+
+            let url = 'http://localhost:8000/htmx/leaves/';
+            const params = new URLSearchParams();
+            params.append('t', Date.now());
+            if (currentStatus) params.append('Status', currentStatus);
+            if (currentSearch) params.append('search', currentSearch);
+
+            fetch(`${url}?${params.toString()}`, {
+                headers: { 'Authorization': `${tokenType} ${accessToken}` }
+            })
+            .then(res => {
+                if (res.ok) return res.text();
+                throw new Error('Failed');
+            })
+            .then(html => {
+                document.getElementById('leavesTable').innerHTML = html;
+                updateStats();
+            })
+            .catch(err => {
+                console.error('Error refreshing table:', err);
+                // Fallback: trigger HTMX load
+                const table = document.getElementById('leavesTable');
+                htmx.trigger(table, 'load');
+            });
+        }
+
         window.viewLeaveDetails = function(id, name, type, start, end, applied, status) {
             const startDate = new Date(start).toLocaleDateString();
             const endDate = new Date(end).toLocaleDateString();
-            const appliedOn = new Date(applied).toLocaleDateString();
-            
+            {% comment %} const appliedOn = new Date(applied).toLocaleDateString(); {% endcomment %}
+
             const leaveTypeLabels = { 'SICK': 'Sick Leave', 'CASUAL': 'Casual Leave', 'EARNED': 'Earned Leave' };
             const statusClass = status === 'PENDING' ? 'bg-yellow-100 text-yellow-700' : status === 'APPROVED' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700';
-            
+
             const content = `
                 <div class="space-y-3">
                     <div class="flex justify-between"><span class="text-muted-foreground">Employee:</span><span class="font-medium">${name}</span></div>
                     <div class="flex justify-between"><span class="text-muted-foreground">Leave Type:</span><span class="font-medium">${leaveTypeLabels[type] || type}</span></div>
                     <div class="flex justify-between"><span class="text-muted-foreground">Start Date:</span><span class="font-medium">${startDate}</span></div>
                     <div class="flex justify-between"><span class="text-muted-foreground">End Date:</span><span class="font-medium">${endDate}</span></div>
-                    <div class="flex justify-between"><span class="text-muted-foreground">Applied On:</span><span class="font-medium">${appliedOn}</span></div>
+                    <div class="flex justify-between"><span class="text-muted-foreground">Applied On:</span><span class="font-medium">${applied}</span></div>
                     <div class="flex justify-between items-center pt-2 border-t"><span class="text-muted-foreground">Status:</span><span class="px-3 py-1 rounded-full text-sm font-medium ${statusClass}">${status}</span></div>
                     ${status === 'PENDING' ? `<div class="flex gap-2 mt-4 pt-4 border-t"><button onclick="quickApprove(${id})" class="flex-1 bg-green-500 hover:bg-green-600 text-white py-2 px-4 rounded-lg transition"><i class="fas fa-check mr-1"></i>Approve</button><button onclick="quickReject(${id})" class="flex-1 bg-red-500 hover:bg-red-600 text-white py-2 px-4 rounded-lg transition"><i class="fas fa-times mr-1"></i>Reject</button></div>` : ''}
                 </div>
@@ -283,6 +375,109 @@
             document.getElementById('leavesTable').dispatchEvent(new Event('load'));
         }
 
+        function switchTab(tab) {
+            // Hide all sections
+            document.getElementById('section-leaves').classList.add('hidden');
+            document.getElementById('section-users').classList.add('hidden');
+            document.getElementById('section-stats').classList.add('hidden');
+            
+            // Reset all tab buttons
+            document.getElementById('tab-leaves').classList.remove('btn-primary');
+            document.getElementById('tab-leaves').classList.add('btn-ghost');
+            document.getElementById('tab-users').classList.remove('btn-primary');
+            document.getElementById('tab-users').classList.add('btn-ghost');
+            document.getElementById('tab-stats').classList.remove('btn-primary');
+            document.getElementById('tab-stats').classList.add('btn-ghost');
+            
+            // Show selected section
+            document.getElementById('section-' + tab).classList.remove('hidden');
+            
+            // Highlight selected tab
+            document.getElementById('tab-' + tab).classList.remove('btn-ghost');
+            document.getElementById('tab-' + tab).classList.add('btn-primary');
+            
+            // Load data if needed
+            if (tab === 'users' && !document.getElementById('usersTable').dataset.loaded) {
+                loadUsersTable();
+            }
+        }
+
+        function loadUsersTable() {
+            const tokenType = localStorage.getItem('token_type') || 'Bearer';
+            fetch('http://localhost:8000/api/users/', {
+                method: 'GET',
+                headers: { 'Authorization': `${tokenType} ${accessToken}` }
+            })
+            .then(res => res.json())
+            .then(data => {
+                const users = data.users || [];
+                let html = `
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>Username</th>
+                                <th>Email</th>
+                                <th>Role</th>
+                                <th>Joined</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                `;
+                
+                users.forEach(user => {
+                    const roleBadge = user.role === 'ADMIN' ? 'badge-primary' : user.role === 'MANAGER' ? 'badge-secondary' : 'badge-ghost';
+                    html += `
+                        <tr>
+                            <td class="font-medium">${user.username}</td>
+                            <td>${user.email}</td>
+                            <td><span class="badge ${roleBadge}">${user.role}</span></td>
+                            <td>${new Date(user.created_at).toLocaleDateString()}</td>
+                            <td>
+                                ${user.role !== 'ADMIN' ? `
+                                    <button onclick="promoteUser(${user.id}, '${user.role === 'EMPLOYEE' ? 'MANAGER' : 'EMPLOYEE'}')" class="btn btn-xs btn-outline">
+                                        <i class="fas fa-arrow-up mr-1"></i>Promote
+                                    </button>
+                                ` : '<span class="text-muted-foreground text-sm"><i class="fas fa-crown mr-1"></i>Admin</span>'}
+                            </td>
+                        </tr>
+                    `;
+                });
+                
+                html += '</tbody></table>';
+                document.getElementById('usersTable').innerHTML = html;
+                document.getElementById('usersTable').dataset.loaded = 'true';
+            })
+            .catch(() => {
+                document.getElementById('usersTable').innerHTML = '<p class="p-4 text-center text-error">Failed to load users</p>';
+            });
+        }
+
+        function promoteUser(userId, newRole) {
+            fetch('http://localhost:8000/api/auth/promote/', {
+                method: 'POST',
+                headers: { 
+                    'Authorization': `${localStorage.getItem('token_type') || 'Bearer'} ${accessToken}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ user_id: userId, role: newRole })
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.error) {
+                    showToast(data.error, 'error');
+                } else {
+                    showToast(data.message);
+                    loadUsersTable();
+                }
+            })
+            .catch(() => showToast('Failed to promote user', 'error'));
+        }
+
+        function showAddUserModal() {
+            window.location.href = '/register/';
+        }
+
         function openModal(content) {
             document.getElementById('modalContent').innerHTML = content;
             document.getElementById('actionModal').classList.remove('hidden');
@@ -296,15 +491,31 @@
 
         function updateStats() {
             const tokenType = localStorage.getItem('token_type') || 'Bearer';
-            fetch('http://localhost:8000/leaves/leaves/', { headers: { 'Authorization': `${tokenType} ${accessToken}` } })
-            .then(res => res.json()).then(data => {
-                const results = data.results || [];
-                document.getElementById('statTotal').textContent = results.length;
-                document.getElementById('statPending').textContent = results.filter(l => l.Status === 'PENDING').length;
-                document.getElementById('statApproved').textContent = results.filter(l => l.Status === 'APPROVED').length;
-                document.getElementById('statRejected').textContent = results.filter(l => l.Status === 'REJECTED').length;
-            }).catch(() => {});
+            fetch('http://localhost:8000/api/stats/', {
+                method: 'GET',
+                headers: { 'Authorization': `${tokenType} ${accessToken}` }
+            })
+            .then(res => res.json())
+            .then(data => {
+                document.getElementById('statTotal').textContent = data.total || 0;
+                document.getElementById('statPending').textContent = data.pending || 0;
+                document.getElementById('statApproved').textContent = data.approved || 0;
+                document.getElementById('statRejected').textContent = data.rejected || 0;
+            })
+            .catch(() => {});
         }
+        
+        // Listen for leave updates to refresh stats
+        document.body.addEventListener('adminStatsUpdated', function() {
+            updateStats();
+        });
+        
+        // Refresh stats after HTMX table is updated
+        document.body.addEventListener('htmx:afterSwap', function(evt) {
+            if (evt.detail.target.id === 'leavesTable') {
+                updateStats();
+            }
+        });
 
         function showToast(message, type = 'success') {
             const toast = document.getElementById('toast');

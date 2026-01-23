@@ -7,6 +7,7 @@
                 <th class="text-left p-4 text-sm font-medium text-muted-foreground">Dates</th>
                 <th class="text-left p-4 text-sm font-medium text-muted-foreground">Applied</th>
                 <th class="text-left p-4 text-sm font-medium text-muted-foreground">Status</th>
+                <th class="text-left p-4 text-sm font-medium text-muted-foreground">Actions</th>
             </tr>
         </thead>
         <tbody class="divide-y">
@@ -28,11 +29,21 @@
                     <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
                         {% if leave.Status == 'PENDING' %}bg-yellow-100 text-yellow-700
                         {% elif leave.Status == 'APPROVED' %}bg-green-100 text-green-700
+                        {% elif leave.Status == 'CANCELLED' %}bg-gray-100 text-gray-700
                         {% else %}bg-red-100 text-red-700{% endif %}">
                         {% if leave.Status == 'PENDING' %}Pending
                         {% elif leave.Status == 'APPROVED' %}Approved
+                        {% elif leave.Status == 'CANCELLED' %}Cancelled
                         {% else %}Rejected{% endif %}
                     </span>
+                </td>
+                <td class="p-4">
+                    <button hx-get="/htmx/my-leaves/{{ leave.id }}/"
+                            hx-target="#leaveDetailContainer"
+                            hx-swap="innerHTML"
+                            class="btn btn-sm btn-ghost">
+                        <i class="fas fa-eye mr-1"></i>View
+                    </button>
                 </td>
             </tr>
             {% endfor %}
@@ -48,3 +59,6 @@
     </div>
     {% endif %}
 </div>
+
+<!-- Leave Detail Modal Container -->
+<div id="leaveDetailContainer"></div>

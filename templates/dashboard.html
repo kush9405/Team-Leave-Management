@@ -151,9 +151,9 @@
             <button onclick="openLeaveModal()" class="btn-primary">
                 <i class="fas fa-plus mr-2"></i>Request Leave
             </button>
-            <button onclick="refreshLeaves()" class="btn-secondary">
+            {% comment %} <button onclick="refreshLeaves()" class="btn-secondary">
                 <i class="fas fa-sync-alt mr-2"></i>Refresh
-            </button>
+            </button> {% endcomment %}
         </div>
 
         <!-- Leave History -->
@@ -172,6 +172,9 @@
             </div>
         </div>
     </main>
+
+    <!-- Leave Detail Container (for View/Edit/Cancel) -->
+    <div id="leaveDetailContainer"></div>
 
     <!-- Leave Request Modal -->
     <div id="leaveModal" class="fixed inset-0 bg-black/50 hidden items-center justify-center z-50 p-4">
@@ -241,6 +244,8 @@
                     const count = table.querySelectorAll('tbody tr').length;
                     document.getElementById('historyCount').textContent = `${count} request${count !== 1 ? 's' : ''}`;
                 }
+                // Also refresh stats when leaves table is updated
+                loadStats();
             }
         });
 
@@ -271,13 +276,21 @@
             })
             .then(res => res.json())
             .then(data => {
-                document.getElementById('statTotal').textContent = data.total;
-                document.getElementById('statPending').textContent = data.pending;
-                document.getElementById('statApproved').textContent = data.approved;
-                document.getElementById('statRejected').textContent = data.rejected;
+                document.getElementById('statTotal').textContent = data.total || 0;
+                document.getElementById('statPending').textContent = data.pending || 0;
+                document.getElementById('statApproved').textContent = data.approved || 0;
+                document.getElementById('statRejected').textContent = data.rejected || 0;
             })
             .catch(() => {});
         }
+
+        // Listen for leave updates to refresh stats
+        document.body.addEventListener('leaveSubmitted', function() {
+            loadStats();
+        });
+        document.body.addEventListener('leavesUpdated', function() {
+            loadStats();
+        });
 
         function loadLeaves() {
             const tokenType = localStorage.getItem('token_type') || 'Bearer';

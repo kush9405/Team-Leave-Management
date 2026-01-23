@@ -1,231 +1,187 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="light">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Login - Leave Management</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/htmx.org@2.0.8/dist/htmx.min.js"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://cdn.jsdelivr.net/npm/daisyui@4.7.3/dist/full.min.css" rel="stylesheet" type="text/css" />
     <script>
         tailwind.config = {
             theme: {
-                extend: {
-                    colors: {
-                        border: 'hsl(var(--border))',
-                        input: 'hsl(var(--input))',
-                        ring: 'hsl(var(--ring))',
-                        primary: { DEFAULT: '#667eea', foreground: 'white' },
-                        muted: { DEFAULT: '#f1f5f9', foreground: '#64748b' },
-                        accent: { DEFAULT: '#f8fafc', foreground: '#0f172a' },
-                        destructive: { DEFAULT: '#ef4444', foreground: 'white' },
-                    },
-                    borderRadius: { lg: '0.5rem', md: '0.375rem', sm: '0.25rem' },
-                }
+                extend: {}
             }
         }
     </script>
     <style>
-        :root {
-            --background: 0 0% 100%;
-            --foreground: 222.2 84% 4.9%;
-            --primary: 243 75% 59%;
-            --primary-foreground: 210 40% 98%;
-            --muted: 210 40% 96.1%;
-            --muted-foreground: 215.4 16.3% 46.9%;
-            --accent: 210 40% 96.1%;
-            --destructive: 0 84.2% 60.2%;
-            --border: 214.3 31.8% 91.4%;
-            --ring: 243 75% 59%;
-        }
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            min-height: 100vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-        .card {
-            background: white;
-            border-radius: 0.5rem;
-            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
-        }
-        .input-field {
-            width: 100%;
-            border-radius: 0.5rem;
-            border: 1px solid hsl(var(--border));
-            padding: 0.625rem 0.75rem;
-            font-size: 0.875rem;
-            transition: all 0.15s ease;
-        }
-        .input-field:focus {
-            outline: none;
-            border-color: hsl(var(--ring));
-            box-shadow: 0 0 0 2px hsl(var(--ring)/0.2);
-        }
-        .btn-primary {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            font-weight: 500;
-            transition: all 0.15s ease;
-        }
-        .btn-primary:hover { opacity: 0.9; transform: translateY(-1px); }
-        .btn-outline {
-            border: 1px solid hsl(var(--border));
-            background: transparent;
-            font-weight: 500;
-        }
-        .btn-outline:hover { background: hsl(var(--accent)); }
-        .input-error { border-color: #ef4444; animation: shake 0.5s ease; }
-        @keyframes shake {
-            0%, 100% { transform: translateX(0); }
-            25% { transform: translateX(-5px); }
-            75% { transform: translateX(5px); }
-        }
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        body { font-family: 'Inter', sans-serif; }
     </style>
 </head>
-<body>
-    <div class="card w-full max-w-md p-8">
-        <!-- Header -->
-        <div class="text-center mb-8">
-            <div class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-primary/10 mb-4">
-                <i class="fas fa-calendar-check text-3xl text-primary"></i>
-            </div>
-            <h1 class="text-2xl font-bold text-gray-900">Welcome back</h1>
-            <p class="text-muted-foreground mt-2">Sign in to your Leave Management account</p>
-        </div>
-
-        <!-- Error Alert -->
-        <div id="errorAlert" class="hidden mb-4 p-4 rounded-lg bg-destructive/10 border border-destructive/20">
-            <div class="flex items-center gap-2 text-destructive">
-                <i class="fas fa-circle-exclamation"></i>
-                <span id="errorMessage" class="text-sm"></span>
-            </div>
-        </div>
-
-        <!-- Divider -->
-        <div class="relative mb-6" id="dividerSection">
-            <div class="absolute inset-0 flex items-center"><div class="w-full border-t"></div></div>
-            <div class="relative flex justify-center text-xs uppercase">
-                <span class="bg-white px-2 text-muted-foreground">Or continue with</span>
-            </div>
-        </div>
-
-        <!-- Email Login Form -->
-        <form id="loginForm">
-            <div class="space-y-4">
-                <div class="space-y-2">
-                    <label for="email" class="text-sm font-medium">Email</label>
-                    <input type="email" id="email" name="email" placeholder="name@example.com" class="input-field" required>
+<body class="min-h-screen bg-base-200 flex items-center justify-center py-10 px-4">
+    <div class="card w-full max-w-md bg-base-100 shadow-xl">
+        <div class="card-body">
+            <!-- Header -->
+            <div class="text-center mb-6">
+                <div class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-primary/10 mb-4">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                    </svg>
                 </div>
-                <div class="space-y-2">
-                    <label for="password" class="text-sm font-medium">Password</label>
-                    <input type="password" id="password" name="password" placeholder="Enter your password" class="input-field" required>
+                <h1 class="text-2xl font-bold text-base-content">Welcome back</h1>
+                <p class="text-base-content/60 mt-2">Sign in to your Leave Management account</p>
+            </div>
+
+            <!-- Error Alert -->
+            <div id="errorAlert" class="alert alert-error mb-4 hidden">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                </svg>
+                <span id="errorMessage">Something went wrong!</span>
+            </div>
+
+            <!-- Success Result -->
+            <div id="successResult" class="alert alert-success mb-4 hidden">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <div>
+                    <h3 class="font-bold">Login Successful!</h3>
+                    <p class="text-sm" id="userInfo">Redirecting to dashboard...</p>
                 </div>
-                <button type="submit" class="btn-primary w-full h-11" id="submitBtn">
-                    <span>Sign In</span>
-                    <i class="fas fa-arrow-right ml-2"></i>
-                </button>
             </div>
-        </form>
 
-        <!-- Success Result -->
-        <div id="successResult" class="hidden mt-6 p-4 rounded-lg bg-green-50 border border-green-200">
-            <div class="flex items-center gap-2 text-green-600 mb-2">
-                <i class="fas fa-check-circle text-lg"></i>
-                <span class="font-medium">Login Successful!</span>
-            </div>
-            <div class="text-sm text-gray-600 space-y-1">
-                <p><span class="font-medium">Email:</span> <span id="userEmail"></span></p>
-                <p><span class="font-medium">Role:</span> <span id="userRole"></span></p>
-                <p><span class="font-medium">Username:</span> <span id="userName"></span></p>
-            </div>
-            <div class="mt-3 pt-3 border-t border-green-200">
-                <p class="text-xs text-green-600">Redirecting to dashboard...</p>
-            </div>
-        </div>
+            <!-- Login Form -->
+            <form id="loginForm">
+                <div class="space-y-4">
+                    <div class="form-control">
+                        <label class="label">
+                            <span class="label-text font-medium">Email</span>
+                        </label>
+                        <input type="email" id="email" name="email" placeholder="name@example.com" class="input input-bordered w-full" required />
+                    </div>
 
-        <!-- Footer -->
-        <div class="mt-6 text-center text-sm text-muted-foreground">
-            <p>Don't have an account? <a href="#" class="text-primary hover:underline">Sign up</a></p>
+                    <div class="form-control">
+                        <label class="label">
+                            <span class="label-text font-medium">Password</span>
+                        </label>
+                        <input type="password" id="password" name="password" placeholder="••••••••" class="input input-bordered w-full" required />
+                    </div>
+
+                    <div class="form-control mt-6">
+                        <button type="submit" class="btn btn-primary w-full" id="submitBtn">
+                            <span>Sign In</span>
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 ml-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3" />
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+            </form>
+
+            <!-- Footer -->
+            <div class="divider my-6">OR</div>
+            
+            <p class="text-center text-base-content/70">
+                Don't have an account?
+                <a href="/register/" class="link link-primary font-medium">Sign up</a>
+            </p>
         </div>
     </div>
 
     <script>
         const API_URL = 'http://localhost:8000/api';
 
-        // Handle OAuth callback from URL params
-        function handleOAuthCallback() {
-            const urlParams = new URLSearchParams(window.location.search);
-            if (urlParams.has('access_token')) {
-                const accessToken = urlParams.get('access_token');
-                const refreshToken = urlParams.get('refresh_token');
-                const tokenType = urlParams.get('token_type') || 'Bearer';
-                
-                if (accessToken && refreshToken) {
-                    localStorage.setItem('access_token', accessToken);
-                    localStorage.setItem('refresh_token', refreshToken);
-                    localStorage.setItem('token_type', tokenType);
-                    fetch(`${API_URL}/auth/me/`, { 
-                        headers: { 'Authorization': `${tokenType} ${accessToken}` } 
-                    })
-                    .then(res => res.json())
-                    .then(data => { 
-                        localStorage.setItem('user', JSON.stringify(data.user)); 
-                        window.location.href = '/dashboard/'; 
-                    })
-                    .catch(() => window.location.href = '/dashboard/');
-                } else if (urlParams.has('error')) {
-                    showError(decodeURIComponent(urlParams.get('error')));
-                }
+        // Check if already logged in
+        document.addEventListener('DOMContentLoaded', function() {
+            const token = localStorage.getItem('access_token');
+            if (token) {
+                window.location.href = '/dashboard/';
             }
-        }
-
-        // Initialize on page load
-        document.addEventListener('DOMContentLoaded', handleOAuthCallback);
+        });
 
         document.getElementById('loginForm').addEventListener('submit', function(e) {
             e.preventDefault();
-            showLoading();
-            const email = document.getElementById('email').value, password = document.getElementById('password').value;
+            
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            const submitBtn = document.getElementById('submitBtn');
+            
+            submitBtn.classList.add('loading');
+            submitBtn.disabled = true;
+            
             fetch(`${API_URL}/auth/login/`, {
-                method: 'POST', headers: { 'Content-Type': 'application/json' },
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ email, password })
-            }).then(res => res.json()).then(data => data.error ? showError(data.error) : showSuccess(data))
-            .catch(err => showError('Network error: ' + err.message));
+            })
+            .then(res => res.json())
+            .then(data => {
+                submitBtn.classList.remove('loading');
+                submitBtn.disabled = false;
+                
+                if (data.error) {
+                    showError(data.error || 'An error occurred during login');
+                } else if (data.user && data.tokens) {
+                    showSuccess(data);
+                } else {
+                    showError('Invalid response from server');
+                }
+            })
+            .catch(err => {
+                submitBtn.classList.remove('loading');
+                submitBtn.disabled = false;
+                showError('Network error: ' + (err.message || 'Please check your connection'));
+            });
         });
 
         function showSuccess(data) {
-            document.getElementById('loginForm').classList.add('hidden');
-            document.getElementById('errorAlert').classList.add('hidden');
-            document.getElementById('successResult').classList.remove('hidden');
-            document.getElementById('userEmail').textContent = data.user.email;
-            document.getElementById('userRole').textContent = data.user.role;
-            document.getElementById('userName').textContent = data.user.username;
-            localStorage.setItem('access_token', data.tokens.access_token);
-            localStorage.setItem('refresh_token', data.tokens.refresh_token);
-            localStorage.setItem('token_type', data.tokens.token_type);
-            localStorage.setItem('user', JSON.stringify(data.user));
-            setTimeout(() => { window.location.href = (data.user.role === 'ADMIN' || data.user.role === 'MANAGER') ? '/admin/' : '/dashboard/'; }, 1500);
+            const errorAlert = document.getElementById('errorAlert');
+            const successResult = document.getElementById('successResult');
+            const loginForm = document.getElementById('loginForm');
+            const user = data.user;
+            
+            // Validate user object exists
+            if (!user) {
+                showError('Invalid user data received');
+                return;
+            }
+            
+            errorAlert.classList.add('hidden');
+            loginForm.classList.add('hidden');
+            successResult.classList.remove('hidden');
+            
+            document.getElementById('userInfo').textContent = `${user.email || 'User'} (${user.role || 'EMPLOYEE'})`;
+            
+            // Store tokens
+            if (data.tokens) {
+                localStorage.setItem('access_token', data.tokens.access_token);
+                localStorage.setItem('refresh_token', data.tokens.refresh_token);
+                localStorage.setItem('token_type', data.tokens.token_type);
+            }
+            localStorage.setItem('user', JSON.stringify(user));
+            
+            // Redirect based on role
+            setTimeout(() => {
+                if (user.role === 'ADMIN' || user.role === 'MANAGER') {
+                    window.location.href = '/admin/';
+                } else {
+                    window.location.href = '/dashboard/';
+                }
+            }, 1500);
         }
 
         function showError(message) {
             const errorAlert = document.getElementById('errorAlert');
             document.getElementById('errorMessage').textContent = message;
             errorAlert.classList.remove('hidden');
-            document.querySelectorAll('.input-field').forEach(input => input.classList.add('input-error'));
-            setTimeout(() => { errorAlert.classList.add('hidden'); document.querySelectorAll('.input-field').forEach(input => input.classList.remove('input-error')); }, 5000);
-        }
-
-        function showLoading() {
-            document.getElementById('errorAlert').classList.add('hidden');
-            const btn = document.getElementById('submitBtn');
-            btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Signing in...';
-            btn.disabled = true;
+            
+            // Auto-hide after 5 seconds
+            setTimeout(() => {
+                errorAlert.classList.add('hidden');
+            }, 5000);
         }
     </script>
 </body>
 </html>
-

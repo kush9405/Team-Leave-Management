@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Register - Leave Management</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/htmx.org@2.0.8/dist/htmx.min.js"></script>
+    <link href="https://cdn.jsdelivr.net/npm/daisyui@4.7.3/dist/full.min.css" rel="stylesheet" type="text/css" />
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {}
+            }
+        }
+    </script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        body { font-family: 'Inter', sans-serif; }
+    </style>
+</head>
+<body class="min-h-screen bg-base-200 flex items-center justify-center py-10 px-4">
+    <div class="card w-full max-w-lg bg-base-100 shadow-xl">
+        <div class="card-body">
+            <!-- Header -->
+            <div class="text-center mb-6">
+                <div class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-primary/10 mb-4">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
+                    </svg>
+                </div>
+                <h1 class="text-2xl font-bold text-base-content">Create Account</h1>
+                <p class="text-base-content/60 mt-2">Join the Leave Management System</p>
+            </div>
+
+            <!-- Error Alert -->
+            <div id="errorAlert" class="alert alert-error mb-4 hidden">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                </svg>
+                <span id="errorMessage">Something went wrong!</span>
+            </div>
+
+            <!-- Success Message -->
+            <div id="successAlert" class="alert alert-success mb-4 hidden">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <span id="successMessage">Registration successful!</span>
+            </div>
+
+            <!-- Register Form -->
+            <form id="registerForm">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <!-- Username -->
+                    <div class="form-control">
+                        <label class="label">
+                            <span class="label-text font-medium">Username</span>
+                        </label>
+                        <input type="text" id="username" name="username" placeholder="johndoe" class="input input-bordered w-full" required minlength="3" />
+                        <label class="label">
+                            <span class="label-text-alt text-base-content/60">At least 3 characters</span>
+                        </label>
+                    </div>
+
+                    <!-- Email -->
+                    <div class="form-control">
+                        <label class="label">
+                            <span class="label-text font-medium">Email</span>
+                        </label>
+                        <input type="email" id="email" name="email" placeholder="john@example.com" class="input input-bordered w-full" required />
+                    </div>
+
+                    <!-- First Name -->
+                    <div class="form-control">
+                        <label class="label">
+                            <span class="label-text font-medium">First Name</span>
+                        </label>
+                        <input type="text" id="first_name" name="first_name" placeholder="John" class="input input-bordered w-full" minlength=2 maxlength=10 required  />
+                    </div>
+
+                    <!-- Last Name -->
+                    <div class="form-control">
+                        <label class="label">
+                            <span class="label-text font-medium">Last Name</span>
+                        </label>
+                        <input type="text" id="last_name" name="last_name" placeholder="Doe" class="input input-bordered w-full" required minlength=2 maxlength=10/>
+                    </div>
+                </div>
+
+                <!-- Password -->
+                <div class="form-control mt-4">
+                    <label class="label">
+                        <span class="label-text font-medium">Password</span>
+                    </label>
+                    <input type="password" id="password" name="password" placeholder="••••••••" class="input input-bordered w-full" required minlength="8" />
+                    <label class="label">
+                        <span class="label-text-alt text-base-content/60">At least 8 characters</span>
+                    </label>
+                </div>
+
+                <!-- Confirm Password -->
+                <div class="form-control mt-4">
+                    <label class="label">
+                        <span class="label-text font-medium">Confirm Password</span>
+                    </label>
+                    <input type="password" id="password_confirm" name="password_confirm" placeholder="••••••••" class="input input-bordered w-full" required />
+                </div>
+
+                <!-- Submit Button -->
+                <div class="form-control mt-6">
+                    <button type="submit" class="btn btn-primary w-full">
+                        <span>Create Account</span>
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 ml-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6" />
+                        </svg>
+                    </button>
+                </div>
+            </form>
+
+            <!-- Form Container for HTMX responses -->
+            <div id="formContainer"></div>
+
+            <!-- Footer -->
+            <div class="divider my-6">OR</div>
+
+            <p class="text-center text-base-content/70">
+                Already have an account?
+                <a href="/login/" class="link link-primary font-medium">Sign in</a>
+            </p>
+        </div>
+    </div>
+
+    <script>
+        const API_URL = 'http://localhost:8000/api';
+
+        // Handle form submission
+        document.getElementById('registerForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+
+            const password = document.getElementById('password').value;
+            const passwordConfirm = document.getElementById('password_confirm').value;
+
+            if (password !== passwordConfirm) {
+                showError('Passwords do not match!');
+                return;
+            }
+
+            const submitBtn = this.querySelector('button[type="submit"]');
+            submitBtn.classList.add('loading');
+            submitBtn.disabled = true;
+
+            const formData = {
+                username: document.getElementById('username').value,
+                email: document.getElementById('email').value,
+                first_name: document.getElementById('first_name').value,
+                last_name: document.getElementById('last_name').value,
+                password: password,
+                password_confirm: passwordConfirm,
+                role: 'EMPLOYEE'
+            };
+
+            fetch(`${API_URL}/auth/register/`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(formData)
+            })
+            .then(res => res.json())
+            .then(data => {
+                submitBtn.classList.remove('loading');
+                submitBtn.disabled = false;
+
+                if (data.error) {
+                    showError(data.error);
+                } else if (data.user) {
+                    showSuccess('Account created successfully! Redirecting to login...');
+                    setTimeout(() => {
+                        window.location.href = '/login/';
+                    }, 2000);
+                }
+            })
+            .catch(err => {
+                submitBtn.classList.remove('loading');
+                submitBtn.disabled = false;
+                showError('Network error: ' + err.message);
+            });
+        });
+
+        function showError(message) {
+            const errorAlert = document.getElementById('errorAlert');
+            document.getElementById('errorMessage').textContent = message;
+            errorAlert.classList.remove('hidden');
+            
+            // Auto-hide after 5 seconds
+            setTimeout(() => {
+                errorAlert.classList.add('hidden');
+            }, 5000);
+        }
+
+        function showSuccess(message) {
+            const successAlert = document.getElementById('successAlert');
+            const errorAlert = document.getElementById('errorAlert');
+            errorAlert.classList.add('hidden');
+            document.getElementById('successMessage').textContent = message;
+            successAlert.classList.remove('hidden');
+        }
+    </script>
+</body>
+</html>
+

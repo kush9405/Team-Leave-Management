@@ -1,0 +1,130 @@
+<!-- Edit Leave Form - HTMX Modal -->
+<div id="edit-modal-{{ leave.id }}" class="modal modal-open">
+    <div class="modal-box">
+        <h3 class="font-bold text-lg mb-4">Edit Leave Request</h3>
+        
+        <form id="edit-form-{{ leave.id }}" onsubmit="submitEditForm(event, {{ leave.id }})">
+            
+            <div class="space-y-4">
+                <!-- Leave Type -->
+                <div class="form-control">
+                    <label class="label">
+                        <span class="label-text font-medium">Leave Type</span>
+                    </label>
+                    <select name="Leave_Type" id="leaveType-{{ leave.id }}" class="select select-bordered w-full" required>
+                        {% for value, display in leave_types %}
+                        <option value="{{ value }}" {% if leave.Leave_Type == value %}selected{% endif %}>
+                            {{ display }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                
+                <!-- Start Date -->
+                <div class="form-control">
+                    <label class="label">
+                        <span class="label-text font-medium">Start Date</span>
+                    </label>
+                    <input type="date" 
+                           id="startDate-{{ leave.id }}"
+                           name="Start_Date" 
+                           class="input input-bordered w-full" 
+                           value="{{ leave.Start_Date|date:'Y-m-d' }}"
+                           required>
+                </div>
+                
+                <!-- End Date -->
+                <div class="form-control">
+                    <label class="label">
+                        <span class="label-text font-medium">End Date</span>
+                    </label>
+                    <input type="date" 
+                           id="endDate-{{ leave.id }}"
+                           name="End_Date" 
+                           class="input input-bordered w-full" 
+                           value="{{ leave.End_Date|date:'Y-m-d' }}"
+                           required>
+                </div>
+            </div>
+            
+            <!-- Action Buttons -->
+            <div class="modal-action">
+                <button type="button" class="btn" onclick="closeEditModal_{{ leave.id }}()">Cancel</button>
+                <button type="submit" class="btn btn-primary" id="submitBtn-{{ leave.id }}">Save Changes</button>
+            </div>
+        </form>
+    </div>
+    <!-- Close on backdrop click -->
+    <div class="modal-backdrop bg-black/50" onclick="closeEditModal_{{ leave.id }}()"></div>
+</div>
+
+<script>
+// Modal functions for this specific leave
+function closeEditModal_{{ leave.id }}() {
+    const modal = document.querySelector('#edit-modal-{{ leave.id }}');
+    if (modal) {
+        modal.remove();
+    }
+}
+
+// Submit edit form using fetch API
+async function submitEditForm(event, leaveId) {
+    event.preventDefault();
+    
+    const submitBtn = document.getElementById('submitBtn-' + leaveId);
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Saving...';
+    
+    const leaveType = document.getElementById('leaveType-' + leaveId).value;
+    const startDate = document.getElementById('startDate-' + leaveId).value;
+    const endDate = document.getElementById('endDate-' + leaveId).value;
+    
+    // Get auth token
+    const accessToken = localStorage.getItem('access_token');
+    const tokenType = localStorage.getItem('token_type') || 'Bearer';
+    
+    try {
+        const response = await fetch('/htmx/my-leaves/' + leaveId + '/update/', {
+            method: 'PATCH',
+            headers: {
+                'Authorization': `${tokenType} ${accessToken}`,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                Leave_Type: leaveType,
+                Start_Date: startDate,
+                End_Date: endDate
+            })
+        });
+        
+        if (!response.ok) {
+            const errorText = await response.text();
+            console.error('Error response:', errorText);
+            throw new Error('Failed to update leave');
+        }
+        
+        const html = await response.text();
+        
+        // Update the leave detail container
+        const targetElement = document.getElementById('leave-detail-' + leaveId);
+        if (targetElement) {
+            targetElement.innerHTML = html;
+        }
+        
+        // Close the modal
+        closeEditModal_{{ leave.id }}();
+        
+        // Show success toast
+        if (typeof showToast === 'function') {
+            showToast('Leave updated successfully!');
+        }
+        
+    } catch (error) {
+        console.error('Error updating leave:', error);
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = 'Save Changes';
+        alert('Failed to update leave. Please try again.');
+    }
+}
+</script>
+

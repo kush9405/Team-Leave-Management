@@ -1,49 +1,120 @@
-<div class="space-y-4">
-    <div class="flex items-center justify-between">
-        <span class="text-sm text-muted-foreground">Employee</span>
-        <span class="text-sm font-medium text-gray-900">{{ leave.Employee_Name }}</span>
+<div class="modal modal-open">
+    <div class="modal-box max-w-md">
+        <!-- Header -->
+        <div class="flex items-center justify-between mb-4">
+            <h3 class="font-bold text-lg">Leave Request Details</h3>
+            <button onclick="closeLeaveDetail()" class="btn btn-sm btn-ghost btn-circle">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        
+        <div class="space-y-4" id="leave-detail-{{ leave.id }}">
+            <div class="flex items-center justify-between">
+                <span class="text-sm text-muted-foreground">Employee</span>
+                <span class="text-sm font-medium text-gray-900">{{ leave.Employee_Name }}</span>
+            </div>
+            <div class="flex items-center justify-between">
+                <span class="text-sm text-muted-foreground">Leave Type</span>
+                <span class="text-sm font-medium text-gray-900">
+                    {% if leave.Leave_Type == 'SICK' %}Sick Leave
+                    {% elif leave.Leave_Type == 'CASUAL' %}Casual Leave
+                    {% else %}Earned Leave{% endif %}
+                </span>
+            </div>
+            <div class="flex items-center justify-between">
+                <span class="text-sm text-muted-foreground">Start Date</span>
+                <span class="text-sm font-medium text-gray-900">{{ leave.Start_Date|date:"F d, Y" }}</span>
+            </div>
+            <div class="flex items-center justify-between">
+                <span class="text-sm text-muted-foreground">End Date</span>
+                <span class="text-sm font-medium text-gray-900">{{ leave.End_Date|date:"F d, Y" }}</span>
+            </div>
+            <div class="flex items-center justify-between">
+                <span class="text-sm text-muted-foreground">Applied On</span>
+                <span class="text-sm font-medium text-gray-900">{{ leave.Applied_On|date:"F d, Y" }}</span>
+            </div>
+            
+            {% if leave.Cancelled_By %}
+            <div class="flex items-center justify-between">
+                <span class="text-sm text-muted-foreground">Cancelled By</span>
+                <span class="text-sm font-medium text-gray-900">{{ leave.Cancelled_By }}</span>
+            </div>
+            <div class="flex items-center justify-between">
+                <span class="text-sm text-muted-foreground">Cancelled On</span>
+                <span class="text-sm font-medium text-gray-900">{{ leave.Cancelled_On|date:"F d, Y" }}</span>
+            </div>
+            {% endif %}
+            
+            <div class="flex items-center justify-between pt-2 border-t">
+                <span class="text-sm text-muted-foreground">Status</span>
+                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
+                    {% if leave.Status == 'PENDING' %}bg-yellow-100 text-yellow-700
+                    {% elif leave.Status == 'APPROVED' %}bg-green-100 text-green-700
+                    {% elif leave.Status == 'CANCELLED' %}bg-gray-100 text-gray-700
+                    {% else %}bg-red-100 text-red-700{% endif %}">
+                    {{ leave.Status }}
+                </span>
+            </div>
+            
+            <!-- Admin Actions: Approve/Reject for PENDING -->
+            {% if leave.Status == 'PENDING' and is_admin %}
+            <div class="flex gap-2 mt-4 pt-4 border-t">
+                <button onclick="approveLeave({{ leave.id }})"
+                        class="flex-1 bg-green-500 hover:bg-green-600 text-white py-2 px-4 rounded-lg transition">
+                    <i class="fas fa-check mr-1"></i>Approve
+                </button>
+                <button onclick="rejectLeave({{ leave.id }})"
+                        class="flex-1 bg-red-500 hover:bg-red-600 text-white py-2 px-4 rounded-lg transition">
+                    <i class="fas fa-times mr-1"></i>Reject
+                </button>
+            </div>
+            {% endif %}
+            
+            <!-- Employee Actions: Edit/Cancel for PENDING or APPROVED -->
+            {% if can_edit and leave.Status == 'PENDING' %}
+            <div class="flex gap-2 mt-4 pt-4 border-t">
+                <button hx-get="/htmx/my-leaves/{{ leave.id }}/edit/"
+                        hx-target="#leaveDetailContainer"
+                        hx-swap="innerHTML"
+                        class="flex-1 bg-blue-500 hover:bg-blue-600 text-white py-2 px-4 rounded-lg transition">
+                    <i class="fas fa-edit mr-1"></i>Edit
+                </button>
+                <button hx-patch="/htmx/my-leaves/{{ leave.id }}/cancel/"
+                        hx-target="#leave-detail-{{ leave.id }}"
+                        hx-swap="innerHTML"
+                        hx-confirm="Are you sure you want to cancel this leave request?"
+                        class="flex-1 bg-red-500 hover:bg-red-600 text-white py-2 px-4 rounded-lg transition">
+                    <i class="fas fa-times mr-1"></i>Cancel
+                </button>
+            </div>
+            {% endif %}
+            
+            {% if can_edit and leave.Status == 'APPROVED' %}
+            <div class="flex gap-2 mt-4 pt-4 border-t">
+                <button hx-patch="/htmx/my-leaves/{{ leave.id }}/cancel/"
+                        hx-target="#leave-detail-{{ leave.id }}"
+                        hx-swap="innerHTML"
+                        hx-confirm="Are you sure you want to cancel this approved leave?"
+                        class="flex-1 bg-red-500 hover:bg-red-600 text-white py-2 px-4 rounded-lg transition">
+                    <i class="fas fa-times mr-1"></i>Cancel Leave
+                </button>
+            </div>
+            {% endif %}
+        </div>
+        
+        <div class="modal-action mt-4">
+            <button onclick="closeLeaveDetail()" class="btn">Close</button>
+        </div>
     </div>
-    <div class="flex items-center justify-between">
-        <span class="text-sm text-muted-foreground">Leave Type</span>
-        <span class="text-sm font-medium text-gray-900">
-            {% if leave.Leave_Type == 'SICK' %}Sick Leave
-            {% elif leave.Leave_Type == 'CASUAL' %}Casual Leave
-            {% else %}Earned Leave{% endif %}
-        </span>
-    </div>
-    <div class="flex items-center justify-between">
-        <span class="text-sm text-muted-foreground">Start Date</span>
-        <span class="text-sm font-medium text-gray-900">{{ leave.Start_Date|date:"F d, Y" }}</span>
-    </div>
-    <div class="flex items-center justify-between">
-        <span class="text-sm text-muted-foreground">End Date</span>
-        <span class="text-sm font-medium text-gray-900">{{ leave.End_Date|date:"F d, Y" }}</span>
-    </div>
-    <div class="flex items-center justify-between">
-        <span class="text-sm text-muted-foreground">Applied On</span>
-        <span class="text-sm font-medium text-gray-900">{{ leave.Applied_On|date:"F d, Y" }}</span>
-    </div>
-    <div class="flex items-center justify-between pt-2 border-t">
-        <span class="text-sm text-muted-foreground">Status</span>
-        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
-            {% if leave.Status == 'PENDING' %}bg-yellow-100 text-yellow-700
-            {% elif leave.Status == 'APPROVED' %}bg-green-100 text-green-700
-            {% else %}bg-red-100 text-red-700{% endif %}">
-            {{ leave.Status }}
-        </span>
-    </div>
-    
-    {% if leave.Status == 'PENDING' %}
-    <div class="flex gap-2 mt-4 pt-4 border-t">
-        <button onclick="approveLeave({{ leave.id }})"
-                class="flex-1 bg-green-500 hover:bg-green-600 text-white py-2 px-4 rounded-lg transition">
-            <i class="fas fa-check mr-1"></i>Approve
-        </button>
-        <button onclick="rejectLeave({{ leave.id }})"
-                class="flex-1 bg-red-500 hover:bg-red-600 text-white py-2 px-4 rounded-lg transition">
-            <i class="fas fa-times mr-1"></i>Reject
-        </button>
-    </div>
-    {% endif %}
+    <div class="modal-backdrop bg-black/50" onclick="closeLeaveDetail()"></div>
 </div>
+
+<script>
+function closeLeaveDetail() {
+    const container = document.getElementById('leaveDetailContainer');
+    if (container) {
+        container.innerHTML = '';
+    }
+}
+</script>
 

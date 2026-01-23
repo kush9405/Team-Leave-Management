@@ -81,25 +81,6 @@ class RegisterSerializer(serializers.ModelSerializer):
         return user
 
 
-class GoogleOAuthSerializer(serializers.Serializer):
-    id_token = serializers.CharField()
-    access_token = serializers.CharField(required=False)
-    
-    def validate(self, data):
-        if not data.get('id_token'):
-            raise serializers.ValidationError('ID token is required')
-        return data
-
-
-class GitHubOAuthSerializer(serializers.Serializer):
-    code = serializers.CharField()
-    
-    def validate(self, data):
-        if not data.get('code'):
-            raise serializers.ValidationError('Authorization code is required')
-        return data
-
-
 class TokenResponseSerializer(serializers.Serializer):
     access_token = serializers.CharField()
     refresh_token = serializers.CharField(required=False)
